@@ -7,6 +7,10 @@ A full-stack Warehouse Management System built with **Spring Boot** (backend) an
 ## 📋 Table of Contents
 
 - [System Requirements](#-system-requirements)
+- [Installing Prerequisites](#-installing-prerequisites)
+  - [Install Java JDK 17](#1-install-java-jdk-17)
+  - [Install Apache Maven](#2-install-apache-maven)
+  - [Install Node.js](#3-install-nodejs--npm)
 - [Project Structure](#-project-structure)
 - [Backend Setup](#-backend-setup)
 - [Frontend Setup](#-frontend-setup)
@@ -50,6 +54,138 @@ node -version
 
 # Check npm version
 npm -version
+```
+
+---
+
+## 🛠️ Installing Prerequisites
+
+> Skip any tool you already have installed. Run the verify commands first to check.
+
+---
+
+### 1. Install Java JDK 17
+
+#### Option A — Download from Oracle (Recommended for Windows)
+
+1. Go to: **https://www.oracle.com/java/technologies/downloads/#java17**
+2. Under **Windows**, download the **x64 Installer** (`.exe` file)
+3. Run the installer and follow the setup wizard (keep all defaults)
+4. Java installs to `C:\Program Files\Java\jdk-17.x.x\` by default
+
+#### Option B — Download from Adoptium (Free, no Oracle account needed)
+
+1. Go to: **https://adoptium.net/temurin/releases/?version=17**
+2. Select: **Windows → x64 → JDK → .msi**
+3. Download and run the `.msi` installer
+4. ✅ The installer automatically sets `JAVA_HOME` and updates `PATH`
+
+#### Set JAVA_HOME manually (if not set automatically)
+
+```powershell
+# 1. Open Environment Variables:
+#    Start → Search "Environment Variables" → "Edit the system environment variables"
+#    → "Environment Variables" button
+
+# OR set it for the current PowerShell session only:
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"     # adjust path if needed
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+
+# 2. Verify Java is working:
+java -version
+# Expected: java version "17.x.x" or openjdk version "17.x.x"
+```
+
+---
+
+### 2. Install Apache Maven
+
+> Maven is the build tool used to compile and run the Spring Boot backend.
+
+#### Step 1 — Download Maven
+
+1. Go to: **https://maven.apache.org/download.cgi**
+2. Under **Binary zip archive**, download: `apache-maven-3.9.x-bin.zip`
+3. Extract the zip to a permanent location, for example:
+   ```
+   C:\tools\apache-maven-3.9.x\
+   ```
+
+#### Step 2 — Set Environment Variables
+
+```powershell
+# Open Environment Variables (Start → Search "Environment Variables")
+# Add the following:
+
+# New System Variable:
+#   Variable name:  MAVEN_HOME
+#   Variable value: C:\tools\apache-maven-3.9.x
+
+# Edit the 'Path' System Variable → Add new entry:
+#   C:\tools\apache-maven-3.9.x\bin
+```
+
+Or set them for the current PowerShell session:
+
+```powershell
+$env:MAVEN_HOME = "C:\tools\apache-maven-3.9.x"
+$env:PATH = "$env:MAVEN_HOME\bin;$env:PATH"
+```
+
+#### Step 3 — Verify Maven installation
+
+```powershell
+mvn -version
+```
+
+Expected output:
+```
+Apache Maven 3.9.x (...)
+Maven home: C:\tools\apache-maven-3.9.x
+Java version: 17.x.x, vendor: ...
+```
+
+> ⚠️ Maven requires Java to be installed first. `JAVA_HOME` must be set before Maven will work.
+
+#### Step 4 — Test Maven with the project
+
+```powershell
+cd "c:\Users\gokul\OneDrive\Desktop\OOAD PROJECT\wms-system\backend"
+mvn clean compile
+# Expected: [INFO] BUILD SUCCESS
+```
+
+Maven will automatically download all Spring Boot dependencies (~100MB) on first run.
+
+---
+
+### 3. Install Node.js + npm
+
+> Node.js is required to run the React frontend development server.
+
+#### Download and Install
+
+1. Go to: **https://nodejs.org/en/download/**
+2. Download the **LTS version** (Long Term Support) — currently v20.x or v18.x
+3. Run the `.msi` installer — keep all defaults
+4. ✅ npm is included automatically with Node.js
+
+#### Verify Node.js installation
+
+```powershell
+node -version
+# Expected: v18.x.x or v20.x.x
+
+npm -version
+# Expected: 9.x.x or 10.x.x
+```
+
+#### Install frontend dependencies
+
+```powershell
+cd "c:\Users\gokul\OneDrive\Desktop\OOAD PROJECT\wms-system\frontend"
+npm install
+# Downloads all packages listed in package.json into node_modules/
 ```
 
 ---

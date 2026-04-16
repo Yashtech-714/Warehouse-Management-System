@@ -1,0 +1,30 @@
+# ─── Node.js / Frontend ───────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# npm logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── Java / Maven ─────────────────────────────────────────────────────────────
+backend/target/
+*.class
+*.jar
+*.war
+
+# Maven wrapper
+!.mvn/wrapper/maven-wrapper.jar
+
+# ─── IDE & Editor ─────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/settings.json
+.vscode/*.code-workspace
+*.suo
+*.user
+
+# ─── OS Files ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
