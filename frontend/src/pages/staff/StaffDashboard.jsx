@@ -1,35 +1,39 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getOrders, processOrder } from '../../api/orderApi';
-import { getInventory, assignToLocation, moveBetweenLocations } from '../../api/inventoryApi';
+import { getInventory, assignToLocation } from '../../api/inventoryApi';
 import { getPurchaseOrders, receivePurchaseOrder } from '../../api/purchaseOrderApi';
 import { getStorageLocations } from '../../api/storageLocationApi';
+import { getShipments } from '../../api/shipmentApi';
 import { getApiErrorMessage } from '../../services/apiError';
 
 function StaffDashboard() {
   const { user } = useAuth();
-  const [orders, setOrders] = useState([]);
-  const [inventory, setInventory] = useState([]);
+  const [orders, setOrders]               = useState([]);
+  const [inventory, setInventory]         = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
-  const [locations, setLocations] = useState([]);
-  const [activeTab, setActiveTab] = useState('orders');
-  const [msg, setMsg] = useState('');
-  const [error, setError] = useState('');
+  const [locations, setLocations]         = useState([]);
+  const [pendingShipments, setPendingShipments] = useState([]);
+  const [activeTab, setActiveTab]         = useState('orders');
+  const [msg, setMsg]                     = useState('');
+  const [error, setError]                 = useState('');
 
   // Inventory operations state
-  const [selectedItemId, setSelectedItemId] = useState('');
+  const [selectedItemId, setSelectedItemId]       = useState('');
   const [selectedLocationId, setSelectedLocationId] = useState('');
-  const [receiveLocationId, setReceiveLocationId] = useState('');
+  const [receiveLocationId, setReceiveLocationId]   = useState('');
 
   const loadAll = async () => {
     try {
-      const [o, inv, pos, locs] = await Promise.all([
-        getOrders(), getInventory(), getPurchaseOrders(), getStorageLocations()
+      const [o, inv, pos, locs, ships] = await Promise.all([
+        getOrders(), getInventory(), getPurchaseOrders(), getStorageLocations(), getShipments()
       ]);
       setOrders(o.filter(order => order.status === 'CREATED'));
       setInventory(inv);
       setPurchaseOrders(pos.filter(po => po.status === 'DELIVERED'));
       setLocations(locs);
+      // Shipments that still need Staff action
+      setPendingShipments(ships.filter(s => s.status === 'CREATED' || s.status === 'SHIPPED'));
       if (locs.length > 0) {
         setSelectedLocationId(String(locs[0].id));
         setReceiveLocationId(String(locs[0].id));
@@ -38,8 +42,6 @@ function StaffDashboard() {
   };
 
   useEffect(() => { loadAll(); }, []);
-
-  const setResult = (ok, txt) => { if (ok) setMsg(txt); else setError(txt); };
 
   const handleProcess = async (id) => {
     setMsg(''); setError('');
@@ -69,9 +71,37 @@ function StaffDashboard() {
     } catch (err) { setError(getApiErrorMessage(err)); }
   };
 
+  // ── Metric cards data ────────────────────────────────────────────────────
+  const metrics = [
+    {
+      label:   'Orders to Process',
+      value:   orders.length,
+      icon:    '🛒',
+      tab:     'orders',
+      urgent:  orders.length > 0,
+      hint:    'CREATED orders waiting for you',
+    },
+    {
+      label:   'POs to Receive',
+      value:   purchaseOrders.length,
+      icon:    '📦',
+      tab:     'receive',
+      urgent:  purchaseOrders.length > 0,
+      hint:    'DELIVERED purchase orders to stock',
+    },
+    {
+      label:   'Shipments Pending',
+      value:   pendingShipments.length,
+      icon:    '🚚',
+      tab:     null,  // navigates to Shipments page, not a tab
+      urgent:  pendingShipments.length > 0,
+      hint:    'Awaiting SHIPPED or DELIVERED action',
+    },
+  ];
+
   const TABS = [
-    { key: 'orders', label: '🛒 Process Orders' },
-    { key: 'receive', label: '📦 Receive Stock' },
+    { key: 'orders',    label: '🛒 Process Orders' },
+    { key: 'receive',   label: '📦 Receive Stock' },
     { key: 'inventory', label: '🗄️ Inventory Ops' },
   ];
 
@@ -83,9 +113,30 @@ function StaffDashboard() {
       </div>
 
       {error && <div className="error-notice">{error}</div>}
-      {msg && <div className="success-notice">{msg}</div>}
+      {msg   && <div className="success-notice">{msg}</div>}
 
-      {/* Tabs */}
+      {/* ── Work Queue Summary ── */}
+      <h3 className="section-title">Your Work Queue</h3>
+      <div className="card-grid">
+        {metrics.map(m => (
+          <article
+            key={m.label}
+            className={`card metric ${m.urgent ? 'metric-urgent' : ''}`}
+            style={{ cursor: m.tab ? 'pointer' : 'default' }}
+            onClick={() => m.tab && setActiveTab(m.tab)}
+            title={m.tab ? `Click to open ${m.label}` : undefined}
+          >
+            <div className="metric-icon">{m.icon}</div>
+            <h3>{m.label}</h3>
+            <p style={{ color: m.urgent ? '#ef4444' : '#6366f1', fontWeight: 700, fontSize: 28 }}>
+              {m.value}
+            </p>
+            <span className="hint-text" style={{ fontSize: 11 }}>{m.hint}</span>
+          </article>
+        ))}
+      </div>
+
+      {/* ── Tabs ── */}
       <div className="tab-bar">
         {TABS.map(t => (
           <button
@@ -99,23 +150,27 @@ function StaffDashboard() {
       {/* ── Process Orders ── */}
       {activeTab === 'orders' && (
         <div className="card">
-          <h3>Orders to Process</h3>
-          <p className="hint-text">Processing an order checks + deducts inventory and creates a shipment.</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <h3>Orders to Process <span className="badge">{orders.length}</span></h3>
+            <button className="btn secondary" onClick={loadAll}>🔄 Refresh</button>
+          </div>
+          <p className="hint-text">Processing an order checks + deducts inventory and creates a shipment automatically.</p>
           <div className="table-wrap">
             <table className="app-table">
-              <thead><tr><th>Order #</th><th>Status</th><th>Total</th><th>Action</th></tr></thead>
+              <thead><tr><th>Order #</th><th>Customer</th><th>Status</th><th>Total</th><th>Action</th></tr></thead>
               <tbody>
                 {orders.length === 0
-                  ? <tr><td colSpan={4} className="empty-cell">No orders found.</td></tr>
+                  ? <tr><td colSpan={5} className="empty-cell">✅ No orders to process right now.</td></tr>
                   : orders.map(o => (
                     <tr key={o.id}>
-                      <td>{o.orderNumber}</td>
-                      <td><span className={`status-badge status-${o.status?.toLowerCase()}`}>{o.status}</span></td>
+                      <td><strong>{o.orderNumber}</strong></td>
+                      <td>{o.customer?.name ?? '—'}</td>
+                      <td><span className="status-badge status-created">{o.status}</span></td>
                       <td>₹{o.totalAmount}</td>
                       <td>
-                        {o.status === 'CREATED' && (
-                          <button className="btn" onClick={() => handleProcess(o.id)}>Process</button>
-                        )}
+                        <button className="btn" onClick={() => handleProcess(o.id)}>
+                          ⚙️ Process
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -129,7 +184,10 @@ function StaffDashboard() {
       {activeTab === 'receive' && (
         <div className="stack">
           <div className="card">
-            <h3>Receive Stock from Delivered POs</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <h3>Receive Stock from Delivered POs <span className="badge">{purchaseOrders.length}</span></h3>
+              <button className="btn secondary" onClick={loadAll}>🔄 Refresh</button>
+            </div>
             <p className="hint-text">Select a target storage location then click Receive to add items to inventory.</p>
             <div className="field" style={{ maxWidth: 300, marginBottom: 16 }}>
               <label>Target Storage Location</label>
@@ -142,13 +200,17 @@ function StaffDashboard() {
                 <thead><tr><th>PO #</th><th>Supplier</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody>
                   {purchaseOrders.length === 0
-                    ? <tr><td colSpan={4} className="empty-cell">No DELIVERED purchase orders to receive.</td></tr>
+                    ? <tr><td colSpan={4} className="empty-cell">✅ No delivered purchase orders to receive.</td></tr>
                     : purchaseOrders.map(po => (
                       <tr key={po.id}>
-                        <td>{po.purchaseOrderNumber}</td>
+                        <td><strong>{po.purchaseOrderNumber}</strong></td>
                         <td>{po.supplier?.name ?? '—'}</td>
                         <td><span className="status-badge status-processed">{po.status}</span></td>
-                        <td><button className="btn" onClick={() => handleReceive(po.id)}>Receive Stock</button></td>
+                        <td>
+                          <button className="btn" onClick={() => handleReceive(po.id)}>
+                            📥 Receive Stock
+                          </button>
+                        </td>
                       </tr>
                     ))}
                 </tbody>
@@ -199,7 +261,9 @@ function StaffDashboard() {
                   {inventory.map(item => (
                     <tr key={item.id}>
                       <td>{item.product?.name}</td>
-                      <td>{item.quantity}</td>
+                      <td style={{ fontWeight: 600, color: item.quantity <= item.reorderLevel ? '#ef4444' : undefined }}>
+                        {item.quantity}
+                      </td>
                       <td>{item.reorderLevel}</td>
                       <td>{item.storageLocation?.code ?? <span style={{color:'#f59e0b'}}>Unassigned</span>}</td>
                       <td>{item.quantity <= item.reorderLevel ? '⚠️ Low' : '✅'}</td>

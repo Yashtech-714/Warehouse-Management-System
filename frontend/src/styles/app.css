@@ -641,3 +641,9 @@ body { background: #f3f4f6; }
 
 /* ─── Warning badge (Manager alert counts) ─── */
 .badge-warning { background: #f59e0b; color: #fff; }
+
+/* ─── Staff Dashboard — urgent metric card (has pending work) ─── */
+.card.metric.metric-urgent {
+  border: 1.5px solid #fca5a5;
+  background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+}

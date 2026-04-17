@@ -55,7 +55,15 @@ public class OrderServiceImpl implements OrderService {
 		this.notificationService = notificationService;
 	}
 
-	/** Only CUSTOMER creates orders. Builder + Factory pattern. */
+	/**
+	 * CUSTOMER creates an order. Builder + Factory pattern.
+	 *
+	 * Inventory check at creation time:
+	 *   - Sufficient stock  → status: CREATED  (Staff can process immediately)
+	 *   - Insufficient stock → status: PENDING_STOCK (Manager notified, auto-recovers after restock)
+	 *
+	 * This prevents a situation where an order sits as CREATED but can never be processed.
+	 */
 	@Override
 	public IOrder createOrder(Long customerId, List<OrderItem> items) {
 		if (items == null || items.isEmpty()) {
@@ -85,11 +93,39 @@ public class OrderServiceImpl implements OrderService {
 		Order order = builder.getResult();
 		order.setOrderNumber(seededOrder.getOrderNumber());
 		order.setOrderDate(seededOrder.getOrderDate());
-		order.setStatus(OrderStatus.CREATED.name());
 		order.refreshTotalAmount();
 
+		// ── Inventory check at order creation ────────────────────────────────────
+		// Find the first item that cannot be fulfilled from current stock.
+		String insufficientProductName = null;
+		for (OrderItem item : order.getItems()) {
+			Long productId = item.getProduct() == null ? null : item.getProduct().getId();
+			Integer qty    = item.getQuantity();
+			if (productId != null && qty != null && !inventoryService.checkAvailability(productId, qty)) {
+				insufficientProductName = item.getProduct().getName() != null
+						? item.getProduct().getName() : "Product #" + productId;
+				break;
+			}
+		}
+
+		if (insufficientProductName != null) {
+			// Insufficient stock — park immediately and alert Manager
+			order.setStatus(OrderStatus.PENDING_STOCK.name());
+			IOrder saved = orderRepository.save(order);
+			notificationService.notify(WmsEvent.LOW_STOCK,
+					"PENDING_STOCK: Order #" + saved.getOrderNumber() +
+					" placed by customer — insufficient stock for \"" + insufficientProductName +
+					"\". Please create a Purchase Order to restock.");
+			notificationService.notify(WmsEvent.ORDER_PLACED,
+					"New order #" + saved.getOrderNumber() + " placed (PENDING_STOCK — awaiting restock).");
+			return saved;
+		}
+
+		// Sufficient stock — ready for Staff to process
+		order.setStatus(OrderStatus.CREATED.name());
 		IOrder saved = orderRepository.save(order);
-		notificationService.notify(WmsEvent.ORDER_PLACED, "New order #" + saved.getOrderNumber() + " placed.");
+		notificationService.notify(WmsEvent.ORDER_PLACED,
+				"New order #" + saved.getOrderNumber() + " placed and ready to process.");
 		return saved;
 	}
 
