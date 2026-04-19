@@ -91,7 +91,7 @@ public class DataInitializer {
             // ── Seed Demo Users (one per role) ──────────────────────────────
             if (managerRepository.count() == 0) {
                 WarehouseManager mgr = new WarehouseManager();
-                mgr.setName("Alice Manager");
+                mgr.setName("Yashas");
                 mgr.setEmail("manager@wms.com");
                 mgr.setPassword("manager123");
                 mgr.setPhone("1111111111");
@@ -103,7 +103,7 @@ public class DataInitializer {
 
             if (staffRepository.count() == 0) {
                 WarehouseStaff staff = new WarehouseStaff();
-                staff.setName("Bob Staff");
+                staff.setName("Vinod");
                 staff.setEmail("staff@wms.com");
                 staff.setPassword("staff123");
                 staff.setPhone("2222222222");
@@ -115,7 +115,7 @@ public class DataInitializer {
 
             if (customerRepository.count() == 0) {
                 Customer customer = new Customer();
-                customer.setName("Carol Customer");
+                customer.setName("Vikas");
                 customer.setEmail("customer@wms.com");
                 customer.setPassword("customer123");
                 customer.setPhone("3333333333");
@@ -126,7 +126,7 @@ public class DataInitializer {
 
             if (supplierRepository.count() == 0) {
                 Supplier supplier = new Supplier();
-                supplier.setName("Dave Supplier");
+                supplier.setName("Vishwas");
                 supplier.setEmail("supplier@wms.com");
                 supplier.setPassword("supplier123");
                 supplier.setPhone("4444444444");
