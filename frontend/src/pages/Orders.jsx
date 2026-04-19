@@ -51,17 +51,25 @@ function Orders() {
   };
 
   const STATUS_BADGE = {
-    CREATED:   'status-created',
-    PROCESSED: 'status-processed',
-    CANCELLED: 'status-cancelled',
-    SHIPPED:   'status-shipped',
+    CREATED:       'status-created',
+    PENDING_STOCK: 'status-pending-stock',
+    PROCESSED:     'status-processed',
+    CANCELLED:     'status-cancelled',
+    SHIPPED:       'status-shipped',
+    DELIVERED:     'status-processed',
   };
 
   // Label map — human-friendly for customer, technical for ops roles
   const statusLabel = (status) => {
     if (role === 'CUSTOMER') {
-      const MAP = { CREATED: '🟡 Pending', PROCESSED: '⚙️ Processing',
-                    SHIPPED: '🚚 Shipped', DELIVERED: '✅ Delivered', CANCELLED: '❌ Cancelled' };
+      const MAP = {
+        CREATED:       '🟡 Pending',
+        PENDING_STOCK: '⏳ Out of Stock',
+        PROCESSED:     '⚙️ Processing',
+        SHIPPED:       '🚚 Shipped',
+        DELIVERED:     '✅ Delivered',
+        CANCELLED:     '❌ Cancelled',
+      };
       return MAP[status] ?? status;
     }
     return status;

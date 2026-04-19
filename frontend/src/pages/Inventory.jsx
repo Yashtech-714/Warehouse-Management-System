@@ -58,9 +58,17 @@ function Inventory() {
                       <td>{item.reorderLevel}</td>
                       <td>
                         <span className={`status-badge ${
-                          item.quantity <= item.reorderLevel ? 'status-cancelled' : 'status-processed'
+                          item.quantity === 0
+                            ? 'status-cancelled'
+                            : item.quantity <= item.reorderLevel
+                              ? 'status-pending'
+                              : 'status-processed'
                         }`}>
-                          {item.quantity <= item.reorderLevel ? '⚠️ Low' : '✅ OK'}
+                          {item.quantity === 0
+                            ? '❌ Out of Stock'
+                            : item.quantity <= item.reorderLevel
+                              ? '⚠️ Low'
+                              : '✅ OK'}
                         </span>
                       </td>
                     </tr>
