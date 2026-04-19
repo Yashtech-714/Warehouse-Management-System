@@ -349,14 +349,15 @@ Wait for this message:
 
 ## 🔐 Default Login Credentials
 
-> All users are automatically created by `DataInitializer` when the backend starts.
+> All users are automatically seeded by `DataInitializer.java` on every backend startup.
+> Edit names/passwords there: `backend/src/main/java/com/wms/config/DataInitializer.java`
 
-| Role         | Email                | Password   |
-|--------------|----------------------|------------|
-| **Manager**  | `manager@wms.com`    | `password` |
-| **Staff**    | `staff@wms.com`      | `password` |
-| **Customer** | `customer@wms.com`   | `password` |
-| **Supplier** | `supplier@wms.com`   | `password` |
+| Role         | Name (seeded)  | Email                | Password       |
+|--------------|----------------|----------------------|----------------|
+| **Manager**  | Yashas         | `manager@wms.com`    | `manager123`   |
+| **Staff**    | Vinod          | `staff@wms.com`      | `staff123`     |
+| **Customer** | Vikas          | `customer@wms.com`   | `customer123`  |
+| **Supplier** | Vishwas        | `supplier@wms.com`   | `supplier123`  |
 
 ---
 
@@ -377,9 +378,10 @@ Wait for this message:
 
 ### 🟧 Customer — Shopper
 - **Dashboard**: Place orders via product dropdown (quantity only — no IDs needed)
-- **Dashboard**: View own orders with real-time status (including ⏳ Out of Stock)
-- **Dashboard**: Cancel CREATED orders
-- Orders parked as `PENDING_STOCK` auto-resume when stock is replenished
+- **My Orders page** (sidebar): View own orders with real-time status, including ⏳ Out of Stock
+- **My Orders page**: Cancel CREATED orders
+- Orders with insufficient stock are automatically parked as `PENDING_STOCK` at placement time
+- `PENDING_STOCK` orders auto-resume when stock is replenished (no manual action needed)
 
 ### 🟪 Supplier — Fulfillment Partner
 - **Dashboard**: View all assigned Purchase Orders
@@ -511,7 +513,7 @@ npm install
 ### ❌ Login fails with "Invalid credentials"
 
 - Wait for the backend to **fully start** (look for "Started WmsApplication" in Terminal 1)
-- Use exact credentials from the table above (all passwords are `password`)
+- Use exact credentials from the table above: `manager123`, `staff123`, `customer123`, `supplier123`
 - The H2 database resets on restart — users are re-seeded automatically
 
 ### ❌ "Only STAFF can..." / "Only MANAGER can..." error
@@ -524,21 +526,23 @@ Log out and log back in with the correct role account.
 ## 📊 Order Lifecycle (End-to-End)
 
 ```
-Customer places order → status: CREATED
+Customer places order
         ↓
-Staff processes order → inventory check
-    ├── Stock OK   → inventory deducted → Shipment auto-created → status: PROCESSED
-    └── No Stock   → status: PENDING_STOCK (Customer notified, Manager alerted)
+createOrder() checks inventory immediately:
+    ├── Stock OK   → status: CREATED  (Staff can process right away)
+    └── No Stock   → status: PENDING_STOCK (Customer & Manager notified immediately)
                         ↓
-              Manager creates Purchase Order → Supplier delivers
+              Manager sees it in Dashboard → ⚠️ Action Required
+              Manager creates Purchase Order → Supplier marks Delivered
                         ↓
-              Staff receives stock → auto-recovery: PENDING_STOCK → CREATED
+              Staff receives stock → auto-recovery scans PENDING_STOCK orders
+              → sufficient stock now? → order: PENDING_STOCK → CREATED
                         ↓
-              Staff processes order → status: PROCESSED
+              Staff processes order → Shipment auto-created → PROCESSED
         ↓
 Staff marks Shipment as SHIPPED  → Order status: SHIPPED
         ↓
 Staff marks Shipment as DELIVERED → Order status: DELIVERED
         ↓
-Customer sees: ✅ Delivered
+Customer sees: ✅ Delivered  (in My Orders page)
 ```
